@@ -244,8 +244,76 @@ class CvatConverterTest(TestCase):
         label_categories = LabelCategories()
         for i in range(10):
             label_categories.add(str(i))
+<<<<<<< HEAD
         label_categories.items[2].attributes.update(["a1", "a2"])
         label_categories.attributes.update(["occluded"])
+=======
+        label_categories.items[2].attributes.update(['a1', 'a2', 'empty'])
+        label_categories.attributes.update(['occluded'])
+
+        source_dataset = Dataset.from_iterable([
+            DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
+                annotations=[
+                    Polygon([0, 0, 4, 0, 4, 4],
+                        label=1, group=4,
+                        attributes={ 'occluded': True}),
+                    Points([1, 1, 3, 2, 2, 3],
+                        label=2,
+                        attributes={ 'a1': 'x', 'a2': 42, 'empty': '',
+                            'unknown': 'bar' }),
+                    Label(1),
+                    Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
+                ]
+            ),
+            DatasetItem(id=1, subset='s1',
+                annotations=[
+                    PolyLine([0, 0, 4, 0, 4, 4],
+                        label=3, id=4, group=4),
+                    Bbox(5, 0, 1, 9,
+                        label=3, id=4, group=4),
+                ]
+            ),
+
+            DatasetItem(id=2, subset='s2', image=np.ones((5, 10, 3)),
+                annotations=[
+                    Polygon([0, 0, 4, 0, 4, 4], z_order=1,
+                        label=3, group=4,
+                        attributes={ 'occluded': False }),
+                    PolyLine([5, 0, 9, 0, 5, 5]), # will be skipped as no label
+                ]
+            ),
+
+            DatasetItem(id=3, subset='s3', image=Image(
+                path='3.jpg', size=(2, 4))),
+        ], categories={
+            AnnotationType.label: label_categories,
+        })
+
+        target_dataset = Dataset.from_iterable([
+            DatasetItem(id=0, subset='s1', image=np.zeros((5, 10, 3)),
+                annotations=[
+                    Polygon([0, 0, 4, 0, 4, 4],
+                        label=1, group=4,
+                        attributes={ 'occluded': True }),
+                    Points([1, 1, 3, 2, 2, 3],
+                        label=2,
+                        attributes={ 'occluded': False, 'empty': '',
+                            'a1': 'x', 'a2': 42 }),
+                    Label(1),
+                    Label(2, attributes={ 'a1': 'y', 'a2': 44 }),
+                ], attributes={'frame': 0}
+            ),
+            DatasetItem(id=1, subset='s1',
+                annotations=[
+                    PolyLine([0, 0, 4, 0, 4, 4],
+                        label=3, group=4,
+                        attributes={ 'occluded': False }),
+                    Bbox(5, 0, 1, 9,
+                        label=3, group=4,
+                        attributes={ 'occluded': False }),
+                ], attributes={'frame': 1}
+            ),
+>>>>>>> 1893eb141d428ba95b41e893f295891c4c14c2f7
 
         source_dataset = Dataset.from_iterable(
             [

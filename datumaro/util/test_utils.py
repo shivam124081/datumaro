@@ -94,6 +94,7 @@ def compare_datasets(test, expected, actual, ignored_attrs=None, require_images=
         item_b = find(actual, lambda x: x.id == item_a.id and x.subset == item_a.subset)
         test.assertFalse(item_b is None, item_a.id)
         test.assertEqual(item_a.attributes, item_b.attributes)
+<<<<<<< HEAD
         if (
             require_images
             or item_a.has_image
@@ -101,6 +102,11 @@ def compare_datasets(test, expected, actual, ignored_attrs=None, require_images=
             and item_b.has_image
             and item_b.image.has_data
         ):
+=======
+        if (require_images and item_a.has_image and item_a.image.has_data) or \
+                item_a.has_image and item_a.image.has_data and \
+                item_b.has_image and item_b.image.has_data:
+>>>>>>> 1893eb141d428ba95b41e893f295891c4c14c2f7
             test.assertEqual(item_a.image, item_b.image, item_a.id)
         test.assertEqual(len(item_a.annotations), len(item_b.annotations))
         for ann_a in item_a.annotations:

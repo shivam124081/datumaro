@@ -91,11 +91,19 @@ class CvatExtractor(SourceExtractor):
                         "group": int(el.attrib.get("group_id", 0)),
                         "label": el.attrib["label"],
                     }
+<<<<<<< HEAD
             elif ev == "end":
                 if el.tag == "attribute" and attributes is not None:
                     attr_value = el.text
                     if el.text in ["true", "false"]:
                         attr_value = attr_value == "true"
+=======
+            elif ev == 'end':
+                if el.tag == 'attribute' and attributes is not None:
+                    attr_value = el.text or ''
+                    if el.text in ['true', 'false']:
+                        attr_value = attr_value == 'true'
+>>>>>>> 1893eb141d428ba95b41e893f295891c4c14c2f7
                     else:
                         try:
                             attr_value = float(attr_value)
