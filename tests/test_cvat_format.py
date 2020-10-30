@@ -244,10 +244,6 @@ class CvatConverterTest(TestCase):
         label_categories = LabelCategories()
         for i in range(10):
             label_categories.add(str(i))
-<<<<<<< HEAD
-        label_categories.items[2].attributes.update(["a1", "a2"])
-        label_categories.attributes.update(["occluded"])
-=======
         label_categories.items[2].attributes.update(['a1', 'a2', 'empty'])
         label_categories.attributes.update(['occluded'])
 
@@ -313,7 +309,6 @@ class CvatConverterTest(TestCase):
                         attributes={ 'occluded': False }),
                 ], attributes={'frame': 1}
             ),
->>>>>>> 1893eb141d428ba95b41e893f295891c4c14c2f7
 
         source_dataset = Dataset.from_iterable(
             [

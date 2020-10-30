@@ -13,14 +13,8 @@ from datumaro.components.extractor import (
     LabelCategories,
 )
 from datumaro.components.project import Project
-<<<<<<< HEAD
-from datumaro.util.image import Image
-from datumaro.util.test_utils import TestDir, compare_datasets, test_save_and_load
-=======
 from datumaro.util.image import Image, ByteImage, encode_image
-from datumaro.util.test_utils import (TestDir, compare_datasets,
-    test_save_and_load)
->>>>>>> 1893eb141d428ba95b41e893f295891c4c14c2f7
+from datumaro.util.test_utils import TestDir, compare_datasets, test_save_and_load
 from datumaro.util.tf_util import check_import
 
 try:
@@ -141,18 +135,13 @@ class TfrecordConverterTest(TestCase):
                 DatasetItem(
                     id=1,
                     image=np.ones((16, 16, 3)),
-                    annotations=[
-                        Bbox(2, 1, 4, 4, label=2),
-                        Bbox(4, 2, 8, 4, label=3),
-                    ],
+                    annotations=[Bbox(2, 1, 4, 4, label=2), Bbox(4, 2, 8, 4, label=3),],
                     attributes={"source_id": ""},
                 ),
                 DatasetItem(
                     id=2,
                     image=np.ones((8, 8, 3)) * 2,
-                    annotations=[
-                        Bbox(4, 4, 4, 4, label=3),
-                    ],
+                    annotations=[Bbox(4, 4, 4, 4, label=3),],
                     attributes={"source_id": ""},
                 ),
                 DatasetItem(
@@ -182,9 +171,7 @@ class TfrecordConverterTest(TestCase):
                     attributes={"source_id": ""},
                 )
             ],
-            categories={
-                AnnotationType.label: LabelCategories(),
-            },
+            categories={AnnotationType.label: LabelCategories(),},
         )
 
         with TestDir() as test_dir:
@@ -193,23 +180,32 @@ class TfrecordConverterTest(TestCase):
             )
 
     def test_can_save_dataset_with_unknown_image_formats(self):
-        test_dataset = Dataset.from_iterable([
-            DatasetItem(id=1,
-                image=ByteImage(data=encode_image(np.ones((5, 4, 3)), 'png'),
-                    path='1/q.e'),
-                attributes={'source_id': ''}
-            ),
-            DatasetItem(id=2,
-                image=ByteImage(data=encode_image(np.ones((6, 4, 3)), 'png'),
-                    ext='qwe'),
-                attributes={'source_id': ''}
-            )
-        ], categories={ AnnotationType.label: LabelCategories(), })
+        test_dataset = Dataset.from_iterable(
+            [
+                DatasetItem(
+                    id=1,
+                    image=ByteImage(
+                        data=encode_image(np.ones((5, 4, 3)), "png"), path="1/q.e"
+                    ),
+                    attributes={"source_id": ""},
+                ),
+                DatasetItem(
+                    id=2,
+                    image=ByteImage(
+                        data=encode_image(np.ones((6, 4, 3)), "png"), ext="qwe"
+                    ),
+                    attributes={"source_id": ""},
+                ),
+            ],
+            categories={AnnotationType.label: LabelCategories(),},
+        )
 
         with TestDir() as test_dir:
-            self._test_save_and_load(test_dataset,
+            self._test_save_and_load(
+                test_dataset,
                 partial(TfDetectionApiConverter.convert, save_images=True),
-                test_dir)
+                test_dir,
+            )
 
     def test_labelmap_parsing(self):
         text = """
@@ -266,9 +262,7 @@ class TfrecordImporterTest(TestCase):
                     id=2,
                     subset="val",
                     image=np.ones((8, 8, 3)),
-                    annotations=[
-                        Bbox(1, 2, 4, 2, label=3),
-                    ],
+                    annotations=[Bbox(1, 2, 4, 2, label=3),],
                     attributes={"source_id": "2"},
                 ),
                 DatasetItem(
