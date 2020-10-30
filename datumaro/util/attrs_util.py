@@ -6,8 +6,10 @@ import attr
 
 _NOTSET = object()
 
+
 def not_empty(inst, attribute, x):
     assert len(x) != 0, x
+
 
 def default_if_none(conv):
     def validator(inst, attribute, value):
@@ -22,7 +24,9 @@ def default_if_none(conv):
         elif not isinstance(value, attribute.type or conv):
             value = conv(value)
         setattr(inst, attribute.name, value)
+
     return validator
+
 
 def ensure_cls(c):
     def converter(arg):
@@ -30,4 +34,5 @@ def ensure_cls(c):
             return arg
         else:
             return c(**arg)
+
     return converter

@@ -11,13 +11,13 @@
 
 - Python (3.5+)
 
-``` bash
+```bash
 git clone https://github.com/openvinotoolkit/datumaro
 ```
 
 Optionally, install a virtual environment (recommended):
 
-``` bash
+```bash
 python -m pip install virtualenv
 python -m virtualenv venv
 . venv/bin/activate
@@ -25,18 +25,20 @@ python -m virtualenv venv
 
 Then install all dependencies:
 
-``` bash
+```bash
 while read -r p; do pip install $p; done < requirements.txt
 ```
 
 If you're working inside of a CVAT environment:
-``` bash
+
+```bash
 . .env/bin/activate
 while read -r p; do pip install $p; done < datumaro/requirements.txt
 ```
 
 Install Datumaro:
-``` bash
+
+```bash
 pip install -e /path/to/the/cloned/repo/
 ```
 
@@ -53,14 +55,14 @@ These components are only required for plugins and not installed by default:
 
 ## Usage
 
-``` bash
+```bash
 datum --help
 python -m datumaro --help
 python datumaro/ --help
 python datum.py --help
 ```
 
-``` python
+```python
 import datumaro
 ```
 
@@ -71,13 +73,13 @@ unit tests. Tests are placed in `tests/` directory.
 
 To run tests use:
 
-``` bash
+```bash
 python -m unittest discover -s tests
 ```
 
 If you're working inside of a CVAT environment, you can also use:
 
-``` bash
+```bash
 python manage.py test datumaro/
 ```
 

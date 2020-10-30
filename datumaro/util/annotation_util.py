@@ -21,14 +21,17 @@ def find_instances(instance_anns):
 
     return ann_groups
 
+
 def find_group_leader(group):
     return max(group, key=lambda x: x.get_area())
+
 
 def _get_bbox(ann):
     if isinstance(ann, (_Shape, Mask)):
         return ann.get_bbox()
     else:
         return ann
+
 
 def max_bbox(annotations):
     boxes = [_get_bbox(ann) for ann in annotations]
@@ -37,6 +40,7 @@ def max_bbox(annotations):
     x1 = max((b[0] + b[2] for b in boxes), default=0)
     y1 = max((b[1] + b[3] for b in boxes), default=0)
     return [x0, y0, x1 - x0, y1 - y0]
+
 
 def mean_bbox(annotations):
     le = len(annotations)
@@ -47,15 +51,17 @@ def mean_bbox(annotations):
     mbb = sum(b[1] + b[3] for b in boxes) / le
     return [mlb, mtb, mrb - mlb, mbb - mtb]
 
+
 def softmax(x):
     return np.exp(x) / sum(np.exp(x))
+
 
 def nms(segments, iou_thresh=0.5):
     """
     Non-maxima suppression algorithm.
     """
 
-    indices = np.argsort([b.attributes['score'] for b in segments])
+    indices = np.argsort([b.attributes["score"] for b in segments])
     ious = np.array([[iou(a, b) for b in segments] for a in segments])
 
     predictions = []
@@ -70,6 +76,7 @@ def nms(segments, iou_thresh=0.5):
         indices = np.delete(indices, to_remove)
 
     return predictions
+
 
 def bbox_iou(a, b):
     """
@@ -95,6 +102,7 @@ def bbox_iou(a, b):
     b_area = bW * bH
     union = a_area + b_area - intersection
     return intersection / union
+
 
 def segment_iou(a, b):
     """
@@ -123,9 +131,11 @@ def segment_iou(a, b):
                 return mask_utils.frPyObjects([mask_to_rle(ann.image)], h, w)
             else:
                 raise TypeError("Unexpected arguments: %s, %s" % (a, b))
+
         a = _to_rle(a)
         b = _to_rle(b)
     return float(mask_utils.iou(a, b, [not is_bbox]))
+
 
 def PDJ(a, b, eps=None, ratio=0.05, bbox=None):
     """
@@ -150,6 +160,7 @@ def PDJ(a, b, eps=None, ratio=0.05, bbox=None):
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(dists < eps) / len(p1)
 
+
 def OKS(a, b, sigma=None, bbox=None, scale=None):
     """
     Object Keypoint Similarity metric.
@@ -173,6 +184,7 @@ def OKS(a, b, sigma=None, bbox=None, scale=None):
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(np.exp(-(dists ** 2) / (2 * scale * (2 * sigma) ** 2)))
+
 
 def smooth_line(points, segments):
     assert 2 <= len(points) // 2 and len(points) % 2 == 0

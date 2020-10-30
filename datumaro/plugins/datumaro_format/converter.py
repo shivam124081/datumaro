@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -12,9 +11,20 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME, Annotation, _Shape,
-    Label, Mask, RleMask, Points, Polygon, PolyLine, Bbox, Caption,
-    LabelCategories, MaskCategories, PointsCategories
+    DEFAULT_SUBSET_NAME,
+    Annotation,
+    _Shape,
+    Label,
+    Mask,
+    RleMask,
+    Points,
+    Polygon,
+    PolyLine,
+    Bbox,
+    Caption,
+    LabelCategories,
+    MaskCategories,
+    PointsCategories,
 )
 from datumaro.util import cast
 import pycocotools.mask as mask_utils
@@ -28,38 +38,38 @@ class _SubsetWriter:
         self._context = context
 
         self._data = {
-            'info': {},
-            'categories': {},
-            'items': [],
+            "info": {},
+            "categories": {},
+            "items": [],
         }
 
     @property
     def categories(self):
-        return self._data['categories']
+        return self._data["categories"]
 
     @property
     def items(self):
-        return self._data['items']
+        return self._data["items"]
 
     def write_item(self, item):
         annotations = []
         item_desc = {
-            'id': item.id,
-            'annotations': annotations,
+            "id": item.id,
+            "annotations": annotations,
         }
         if item.attributes:
-            item_desc['attr'] = item.attributes
+            item_desc["attr"] = item.attributes
         if item.path:
-            item_desc['path'] = item.path
+            item_desc["path"] = item.path
         if item.has_image:
             path = item.image.path
             if self._context._save_images:
                 path = self._context._make_image_filename(item)
                 self._context._save_image(item, path)
 
-            item_desc['image'] = {
-                'size': item.image.size,
-                'path': path,
+            item_desc["image"] = {
+                "size": item.image.size,
+                "path": path,
             }
         self.items.append(item_desc)
 
@@ -95,26 +105,28 @@ class _SubsetWriter:
             self.categories[ann_type.name] = converted_desc
 
     def write(self, save_dir):
-        with open(osp.join(save_dir, '%s.json' % (self._name)), 'w') as f:
+        with open(osp.join(save_dir, "%s.json" % (self._name)), "w") as f:
             json.dump(self._data, f)
 
     def _convert_annotation(self, obj):
         assert isinstance(obj, Annotation)
 
         ann_json = {
-            'id': cast(obj.id, int),
-            'type': cast(obj.type.name, str),
-            'attributes': obj.attributes,
-            'group': cast(obj.group, int, 0),
+            "id": cast(obj.id, int),
+            "type": cast(obj.type.name, str),
+            "attributes": obj.attributes,
+            "group": cast(obj.group, int, 0),
         }
         return ann_json
 
     def _convert_label_object(self, obj):
         converted = self._convert_annotation(obj)
 
-        converted.update({
-            'label_id': cast(obj.label, int),
-        })
+        converted.update(
+            {
+                "label_id": cast(obj.label, int),
+            }
+        )
         return converted
 
     def _convert_mask_object(self, obj):
@@ -124,28 +136,33 @@ class _SubsetWriter:
             rle = obj.rle
         else:
             rle = mask_utils.encode(
-                np.require(obj.image, dtype=np.uint8, requirements='F'))
+                np.require(obj.image, dtype=np.uint8, requirements="F")
+            )
 
-        converted.update({
-            'label_id': cast(obj.label, int),
-            'rle': {
-                # serialize as compressed COCO mask
-                'counts': rle['counts'].decode('ascii'),
-                'size': list(int(c) for c in rle['size']),
-            },
-            'z_order': obj.z_order,
-        })
+        converted.update(
+            {
+                "label_id": cast(obj.label, int),
+                "rle": {
+                    # serialize as compressed COCO mask
+                    "counts": rle["counts"].decode("ascii"),
+                    "size": list(int(c) for c in rle["size"]),
+                },
+                "z_order": obj.z_order,
+            }
+        )
         return converted
 
     def _convert_shape_object(self, obj):
         assert isinstance(obj, _Shape)
         converted = self._convert_annotation(obj)
 
-        converted.update({
-            'label_id': cast(obj.label, int),
-            'points': [float(p) for p in obj.points],
-            'z_order': obj.z_order,
-        })
+        converted.update(
+            {
+                "label_id": cast(obj.label, int),
+                "points": [float(p) for p in obj.points],
+                "z_order": obj.z_order,
+            }
+        )
         return converted
 
     def _convert_polyline_object(self, obj):
@@ -156,61 +173,72 @@ class _SubsetWriter:
 
     def _convert_bbox_object(self, obj):
         converted = self._convert_shape_object(obj)
-        converted.pop('points', None)
-        converted['bbox'] = [float(p) for p in obj.get_bbox()]
+        converted.pop("points", None)
+        converted["bbox"] = [float(p) for p in obj.get_bbox()]
         return converted
 
     def _convert_points_object(self, obj):
         converted = self._convert_shape_object(obj)
 
-        converted.update({
-            'visibility': [int(v.value) for v in obj.visibility],
-        })
+        converted.update(
+            {
+                "visibility": [int(v.value) for v in obj.visibility],
+            }
+        )
         return converted
 
     def _convert_caption_object(self, obj):
         converted = self._convert_annotation(obj)
 
-        converted.update({
-            'caption': cast(obj.caption, str),
-        })
+        converted.update(
+            {
+                "caption": cast(obj.caption, str),
+            }
+        )
         return converted
 
     def _convert_label_categories(self, obj):
         converted = {
-            'labels': [],
+            "labels": [],
         }
         for label in obj.items:
-            converted['labels'].append({
-                'name': cast(label.name, str),
-                'parent': cast(label.parent, str),
-            })
+            converted["labels"].append(
+                {
+                    "name": cast(label.name, str),
+                    "parent": cast(label.parent, str),
+                }
+            )
         return converted
 
     def _convert_mask_categories(self, obj):
         converted = {
-            'colormap': [],
+            "colormap": [],
         }
         for label_id, color in obj.colormap.items():
-            converted['colormap'].append({
-                'label_id': int(label_id),
-                'r': int(color[0]),
-                'g': int(color[1]),
-                'b': int(color[2]),
-            })
+            converted["colormap"].append(
+                {
+                    "label_id": int(label_id),
+                    "r": int(color[0]),
+                    "g": int(color[1]),
+                    "b": int(color[2]),
+                }
+            )
         return converted
 
     def _convert_points_categories(self, obj):
         converted = {
-            'items': [],
+            "items": [],
         }
         for label_id, item in obj.items.items():
-            converted['items'].append({
-                'label_id': int(label_id),
-                'labels': [cast(label, str) for label in item.labels],
-                'joints': [list(map(int, j)) for j in item.joints],
-            })
+            converted["items"].append(
+                {
+                    "label_id": int(label_id),
+                    "labels": [cast(label, str) for label in item.labels],
+                    "joints": [list(map(int, j)) for j in item.joints],
+                }
+            )
         return converted
+
 
 class DatumaroConverter(Converter):
     DEFAULT_IMAGE_EXT = DatumaroPath.IMAGE_EXT
@@ -240,8 +268,10 @@ class DatumaroConverter(Converter):
             writer.write(annotations_dir)
 
     def _save_image(self, item, path=None):
-        super()._save_image(item,
-            osp.join(self._images_dir, self._make_image_filename(item)))
+        super()._save_image(
+            item, osp.join(self._images_dir, self._make_image_filename(item))
+        )
+
 
 class DatumaroProjectConverter(Converter):
     @classmethod
@@ -249,10 +279,11 @@ class DatumaroProjectConverter(Converter):
         os.makedirs(save_dir, exist_ok=True)
 
         from datumaro.components.project import Project
-        project = Project.generate(save_dir,
-            config=kwargs.pop('project_config', None))
 
-        DatumaroConverter.convert(extractor,
-            save_dir=osp.join(
-                project.config.project_dir, project.config.dataset_dir),
-            **kwargs)
+        project = Project.generate(save_dir, config=kwargs.pop("project_config", None))
+
+        DatumaroConverter.convert(
+            extractor,
+            save_dir=osp.join(project.config.project_dir, project.config.dataset_dir),
+            **kwargs
+        )

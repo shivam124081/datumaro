@@ -1,12 +1,10 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import numpy as np
 
-from datumaro.components.extractor import (Transform, LabelCategories,
-    AnnotationType)
+from datumaro.components.extractor import Transform, LabelCategories, AnnotationType
 from datumaro.util import take_by
 
 
@@ -20,7 +18,10 @@ class Launcher:
 
     def categories(self):
         return None
+
+
 # pylint: enable=no-self-use
+
 
 class ModelTransform(Transform):
     def __init__(self, extractor, launcher, batch_size=1):
@@ -53,15 +54,17 @@ class ModelTransform(Transform):
         return self.wrap_item(item, annotations=annotations)
 
     def _check_annotations(self, annotations):
-        labels_count = len(self.categories().get(
-            AnnotationType.label, LabelCategories()).items)
+        labels_count = len(
+            self.categories().get(AnnotationType.label, LabelCategories()).items
+        )
 
         for ann in annotations:
-            label = getattr(ann, 'label')
+            label = getattr(ann, "label")
             if label is None:
                 continue
 
             if label not in range(labels_count):
-                raise Exception("Annotation has unexpected label id %s, "
-                    "while there is only %s defined labels." % \
-                    (label, labels_count))
+                raise Exception(
+                    "Annotation has unexpected label id %s, "
+                    "while there is only %s defined labels." % (label, labels_count)
+                )

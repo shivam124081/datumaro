@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -11,6 +10,7 @@ from itertools import islice
 def find(iterable, pred=lambda x: True, default=None):
     return next((x for x in iterable if pred(x)), default)
 
+
 def dir_items(path, ext, truncate_ext=False):
     items = []
     for f in os.listdir(path):
@@ -20,6 +20,7 @@ def dir_items(path, ext, truncate_ext=False):
                 f = f[:ext_pos]
             items.append(f)
     return items
+
 
 def split_path(path):
     path = osp.normpath(path)
@@ -37,6 +38,7 @@ def split_path(path):
 
     return parts
 
+
 def cast(value, type_conv, default=None):
     if value is None:
         return default
@@ -45,9 +47,10 @@ def cast(value, type_conv, default=None):
     except Exception:
         return default
 
+
 def to_snake_case(s):
     if not s:
-        return ''
+        return ""
 
     name = [s[0].lower()]
     for idx, char in enumerate(s[1:]):
@@ -56,15 +59,17 @@ def to_snake_case(s):
             prev_char = s[idx - 1]
             if not (prev_char.isalpha() and prev_char.isupper()):
                 # avoid "HTML" -> "h_t_m_l"
-                name.append('_')
+                name.append("_")
             name.append(char.lower())
         else:
             name.append(char)
-    return ''.join(name)
+    return "".join(name)
+
 
 def pairs(iterable):
     a = iter(iterable)
     return zip(a, a)
+
 
 def take_by(iterable, count):
     """
@@ -80,14 +85,16 @@ def take_by(iterable, count):
 
         yield batch
 
+
 def str_to_bool(s):
     t = s.lower()
-    if t in {'true', '1', 'ok', 'yes', 'y'}:
+    if t in {"true", "1", "ok", "yes", "y"}:
         return True
-    elif t in {'false', '0', 'no', 'n'}:
+    elif t in {"false", "0", "no", "n"}:
         return False
     else:
         raise ValueError("Can't convert value '%s' to bool" % s)
 
+
 def filter_dict(d, exclude_keys):
-    return { k: v for k, v in d.items() if k not in exclude_keys }
+    return {k: v for k, v in d.items() if k not in exclude_keys}

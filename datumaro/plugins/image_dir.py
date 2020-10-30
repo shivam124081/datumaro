@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -17,7 +16,8 @@ class ImageDirImporter(Importer):
     def find_sources(cls, path):
         if not osp.isdir(path):
             return []
-        return [{ 'url': path, 'format': 'image_dir' }]
+        return [{"url": path, "format": "image_dir"}]
+
 
 class ImageDirExtractor(SourceExtractor):
     def __init__(self, url):
@@ -31,22 +31,24 @@ class ImageDirExtractor(SourceExtractor):
                 image = Image(path=path)
                 try:
                     # force loading
-                    image.data # pylint: disable=pointless-statement
+                    image.data  # pylint: disable=pointless-statement
                 except Exception:
                     continue
 
                 item_id = osp.relpath(osp.splitext(path)[0], url)
                 self._items.append(DatasetItem(id=item_id, image=image))
 
+
 class ImageDirConverter(Converter):
-    DEFAULT_IMAGE_EXT = '.jpg'
+    DEFAULT_IMAGE_EXT = ".jpg"
 
     def apply(self):
         os.makedirs(self._save_dir, exist_ok=True)
 
         for item in self._extractor:
             if item.has_image:
-                self._save_image(item,
-                    osp.join(self._save_dir, self._make_image_filename(item)))
+                self._save_image(
+                    item, osp.join(self._save_dir, self._make_image_filename(item))
+                )
             else:
                 log.debug("Item '%s' has no image info", item.id)

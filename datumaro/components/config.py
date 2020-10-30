@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -63,6 +62,7 @@ class Schema:
         if self._fallback is not None:
             return self._fallback.get(key, default)
 
+
 class SchemaBuilder:
     def __init__(self):
         self._items = {}
@@ -77,20 +77,21 @@ class SchemaBuilder:
     def build(self):
         return Schema(self._items)
 
+
 class Config:
     def __init__(self, config=None, fallback=None, schema=None, mutable=True):
         # schema should be established first
-        self.__dict__['_schema'] = schema
-        self.__dict__['_mutable'] = True
+        self.__dict__["_schema"] = schema
+        self.__dict__["_mutable"] = True
 
-        self.__dict__['_config'] = {}
+        self.__dict__["_config"] = {}
         if fallback is not None:
             for k, v in fallback.items(allow_fallback=False):
                 self.set(k, v)
         if config is not None:
             self.update(config)
 
-        self.__dict__['_mutable'] = mutable
+        self.__dict__["_mutable"] = mutable
 
     def _items(self, allow_fallback=True, allow_internal=True):
         all_config = {}
@@ -107,21 +108,18 @@ class Config:
 
     def items(self, allow_fallback=True, allow_internal=True):
         return self._items(
-                allow_fallback=allow_fallback,
-                allow_internal=allow_internal
-            ).items()
+            allow_fallback=allow_fallback, allow_internal=allow_internal
+        ).items()
 
     def keys(self, allow_fallback=True, allow_internal=True):
         return self._items(
-                allow_fallback=allow_fallback,
-                allow_internal=allow_internal
-            ).keys()
+            allow_fallback=allow_fallback, allow_internal=allow_internal
+        ).keys()
 
     def values(self, allow_fallback=True, allow_internal=True):
         return self._items(
-                allow_fallback=allow_fallback,
-                allow_internal=allow_internal
-            ).values()
+            allow_fallback=allow_fallback, allow_internal=allow_internal
+        ).values()
 
     def __contains__(self, key):
         return key in self.keys()
@@ -194,8 +192,9 @@ class Config:
             schema_entry = self._schema[key]
             schema_entry_instance = schema_entry()
             if not isinstance(value, type(schema_entry_instance)):
-                if isinstance(value, dict) and \
-                        isinstance(schema_entry_instance, Config):
+                if isinstance(value, dict) and isinstance(
+                    schema_entry_instance, Config
+                ):
                     schema_entry_instance.update(value)
                     value = schema_entry_instance
                 else:
@@ -206,17 +205,19 @@ class Config:
 
     @staticmethod
     def parse(path):
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             return Config(yaml.safe_load(f))
 
     @staticmethod
     def yaml_representer(dumper, value):
         return dumper.represent_data(
-            value._items(allow_internal=False, allow_fallback=False))
+            value._items(allow_internal=False, allow_fallback=False)
+        )
 
     def dump(self, path):
-        with open(path, 'w+') as f:
+        with open(path, "w+") as f:
             yaml.dump(self, f)
+
 
 yaml.add_multi_representer(Config, Config.yaml_representer)
 
@@ -224,7 +225,7 @@ yaml.add_multi_representer(Config, Config.yaml_representer)
 class DefaultConfig(Config):
     def __init__(self, default=None):
         super().__init__()
-        self.__dict__['_default'] = default
+        self.__dict__["_default"] = default
 
     def set(self, key, value):
         if key not in self.keys(allow_fallback=False):
@@ -234,4 +235,4 @@ class DefaultConfig(Config):
             return super().set(key, value)
 
 
-DEFAULT_FORMAT = 'datumaro'
+DEFAULT_FORMAT = "datumaro"

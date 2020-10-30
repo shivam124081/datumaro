@@ -1,11 +1,10 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 
 class YoloPath:
-    DEFAULT_SUBSET_NAME = 'train'
-    SUBSET_NAMES = ['train', 'valid']
+    DEFAULT_SUBSET_NAME = "train"
+    SUBSET_NAMES = ["train", "valid"]
 
-    IMAGE_META_FILE = 'images.meta'
+    IMAGE_META_FILE = "images.meta"

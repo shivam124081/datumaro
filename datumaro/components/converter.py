@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -18,11 +17,17 @@ class Converter(CliPlugin):
     @classmethod
     def build_cmdline_parser(cls, **kwargs):
         parser = super().build_cmdline_parser(**kwargs)
-        parser.add_argument('--save-images', action='store_true',
-            help="Save images (default: %(default)s)")
-        parser.add_argument('--image-ext', default=None,
-            help="Image extension (default: keep or use format default%s)" % \
-                (' ' + cls.DEFAULT_IMAGE_EXT if cls.DEFAULT_IMAGE_EXT else ''))
+        parser.add_argument(
+            "--save-images",
+            action="store_true",
+            help="Save images (default: %(default)s)",
+        )
+        parser.add_argument(
+            "--image-ext",
+            default=None,
+            help="Image extension (default: keep or use format default%s)"
+            % (" " + cls.DEFAULT_IMAGE_EXT if cls.DEFAULT_IMAGE_EXT else ""),
+        )
 
         return parser
 
@@ -34,8 +39,14 @@ class Converter(CliPlugin):
     def apply(self):
         raise NotImplementedError("Should be implemented in a subclass")
 
-    def __init__(self, extractor, save_dir, save_images=False,
-            image_ext=None, default_image_ext=None):
+    def __init__(
+        self,
+        extractor,
+        save_dir,
+        save_images=False,
+        image_ext=None,
+        default_image_ext=None,
+    ):
         default_image_ext = default_image_ext or self.DEFAULT_IMAGE_EXT
         assert default_image_ext
         self._default_image_ext = default_image_ext
@@ -70,7 +81,7 @@ class Converter(CliPlugin):
         if src_ext == dst_ext and osp.isfile(item.image.path):
             shutil.copyfile(item.image.path, path)
         elif src_ext == dst_ext and isinstance(item.image, ByteImage):
-            with open(path, 'wb') as f:
+            with open(path, "wb") as f:
                 f.write(item.image.get_bytes())
         else:
             save_image(path, item.image.data)

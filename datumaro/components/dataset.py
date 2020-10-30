@@ -5,10 +5,17 @@
 from collections import OrderedDict, defaultdict
 from typing import Iterable, Union, Dict, List
 
-from datumaro.components.extractor import (Extractor, LabelCategories,
-    AnnotationType, DatasetItem, DEFAULT_SUBSET_NAME)
-from datumaro.components.dataset_filter import \
-    XPathDatasetFilter, XPathAnnotationsFilter
+from datumaro.components.extractor import (
+    Extractor,
+    LabelCategories,
+    AnnotationType,
+    DatasetItem,
+    DEFAULT_SUBSET_NAME,
+)
+from datumaro.components.dataset_filter import (
+    XPathDatasetFilter,
+    XPathAnnotationsFilter,
+)
 
 
 class Dataset(Extractor):
@@ -27,11 +34,12 @@ class Dataset(Extractor):
             return self.parent.categories()
 
     @classmethod
-    def from_iterable(cls, iterable: Iterable[DatasetItem],
-            categories: Union[Dict, List[str]] = None):
+    def from_iterable(
+        cls, iterable: Iterable[DatasetItem], categories: Union[Dict, List[str]] = None
+    ):
         if isinstance(categories, list):
-            categories = { AnnotationType.label:
-                LabelCategories.from_iterable(categories)
+            categories = {
+                AnnotationType.label: LabelCategories.from_iterable(categories)
             }
 
         if not categories:
@@ -142,10 +150,13 @@ class Dataset(Extractor):
 
     @classmethod
     def _merge_items(cls, existing_item, current_item, path=None):
-        return existing_item.wrap(path=path,
+        return existing_item.wrap(
+            path=path,
             image=cls._merge_images(existing_item, current_item),
             annotations=cls._merge_anno(
-                existing_item.annotations, current_item.annotations))
+                existing_item.annotations, current_item.annotations
+            ),
+        )
 
     @staticmethod
     def _merge_images(existing_item, current_item):
@@ -161,7 +172,9 @@ class Dataset(Extractor):
                     image._path = current_item.image.path
 
             if all([existing_item.image._size, current_item.image._size]):
-                assert existing_item.image._size == current_item.image._size, "Image info differs for item '%s'" % existing_item.id
+                assert existing_item.image._size == current_item.image._size, (
+                    "Image info differs for item '%s'" % existing_item.id
+                )
             elif existing_item.image._size:
                 image._size = existing_item.image._size
             else:
@@ -177,10 +190,12 @@ class Dataset(Extractor):
     def _merge_anno(a, b):
         # TODO: implement properly with merging and annotations remapping
         from .operations import merge_annotations_equal
+
         return merge_annotations_equal(a, b)
 
     @staticmethod
     def _merge_categories(sources):
         # TODO: implement properly with merging and annotations remapping
         from .operations import merge_categories
+
         return merge_categories(sources)

@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -16,18 +15,21 @@ from datumaro.util.image import Image
 from datumaro.util.attrs_util import not_empty, default_if_none
 
 
-AnnotationType = Enum('AnnotationType',
+AnnotationType = Enum(
+    "AnnotationType",
     [
-        'label',
-        'mask',
-        'points',
-        'polygon',
-        'polyline',
-        'bbox',
-        'caption',
-    ])
+        "label",
+        "mask",
+        "points",
+        "polygon",
+        "polyline",
+        "bbox",
+        "caption",
+    ],
+)
 
 _COORDINATE_ROUNDING_DIGITS = 2
+
 
 @attrs(kw_only=True)
 class Annotation:
@@ -40,21 +42,23 @@ class Annotation:
 
     @property
     def type(self) -> AnnotationType:
-        return self._type # must be set in subclasses
+        return self._type  # must be set in subclasses
 
     def wrap(self, **kwargs):
         return attr.evolve(self, **kwargs)
+
 
 @attrs(kw_only=True)
 class Categories:
     attributes = attrib(factory=set, validator=default_if_none(set), eq=False)
 
+
 @attrs
 class LabelCategories(Categories):
-    @attrs(repr_ns='LabelCategories')
+    @attrs(repr_ns="LabelCategories")
     class Category:
         name = attrib(converter=str, validator=not_empty)
-        parent = attrib(default='', validator=default_if_none(str))
+        parent = attrib(default="", validator=default_if_none(str))
         attributes = attrib(factory=set, validator=default_if_none(set))
 
     items = attrib(factory=list, validator=default_if_none(list))
@@ -120,20 +124,22 @@ class LabelCategories(Categories):
     def __iter__(self):
         return iter(self.items)
 
+
 @attrs
 class Label(Annotation):
     _type = AnnotationType.label
     label = attrib(converter=int)
 
+
 @attrs(eq=False)
 class MaskCategories(Categories):
     colormap = attrib(factory=dict, validator=default_if_none(dict))
-    _inverse_colormap = attrib(default=None,
-        validator=attr.validators.optional(dict))
+    _inverse_colormap = attrib(default=None, validator=attr.validators.optional(dict))
 
     @property
     def inverse_colormap(self):
         from datumaro.util.mask_tools import invert_colormap
+
         if self._inverse_colormap is None:
             if self.colormap is not None:
                 self._inverse_colormap = invert_colormap(self.colormap)
@@ -150,12 +156,12 @@ class MaskCategories(Categories):
                 return False
         return True
 
+
 @attrs(eq=False)
 class Mask(Annotation):
     _type = AnnotationType.mask
     _image = attrib()
-    label = attrib(converter=attr.converters.optional(int),
-        default=None, kw_only=True)
+    label = attrib(converter=attr.converters.optional(int), default=None, kw_only=True)
     z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     @property
@@ -177,10 +183,12 @@ class Mask(Annotation):
 
     def get_bbox(self):
         from datumaro.util.mask_tools import find_mask_bbox
+
         return find_mask_bbox(self.image)
 
     def paint(self, colormap):
         from datumaro.util.mask_tools import paint_mask
+
         return paint_mask(self.as_class_mask(), colormap)
 
     def __eq__(self, other):
@@ -188,29 +196,35 @@ class Mask(Annotation):
             return False
         if not isinstance(other, __class__):
             return False
-        return \
-            (self.label == other.label) and \
-            (self.z_order == other.z_order) and \
-            (np.array_equal(self.image, other.image))
+        return (
+            (self.label == other.label)
+            and (self.z_order == other.z_order)
+            and (np.array_equal(self.image, other.image))
+        )
+
 
 @attrs(eq=False)
 class RleMask(Mask):
     rle = attrib()
-    _image = attrib(default=attr.Factory(
-        lambda self: self._lazy_decode(self.rle),
-        takes_self=True), init=False)
+    _image = attrib(
+        default=attr.Factory(lambda self: self._lazy_decode(self.rle), takes_self=True),
+        init=False,
+    )
 
     @staticmethod
     def _lazy_decode(rle):
         from pycocotools import mask as mask_utils
+
         return lambda: mask_utils.decode(rle).astype(np.bool)
 
     def get_area(self):
         from pycocotools import mask as mask_utils
+
         return mask_utils.area(self.rle)
 
     def get_bbox(self):
         from pycocotools import mask as mask_utils
+
         return mask_utils.toBbox(self.rle)
 
     def __eq__(self, other):
@@ -218,10 +232,10 @@ class RleMask(Mask):
             return super().__eq__(other)
         return self.rle == other.rle
 
+
 class CompiledMask:
     @staticmethod
-    def from_instance_masks(instance_masks,
-            instance_ids=None, instance_labels=None):
+    def from_instance_masks(instance_masks, instance_ids=None, instance_labels=None):
         from datumaro.util.mask_tools import merge_masks
 
         if instance_ids is not None:
@@ -236,10 +250,13 @@ class CompiledMask:
 
         instance_masks = sorted(
             zip(instance_masks, instance_ids, instance_labels),
-            key=lambda m: m[0].z_order)
+            key=lambda m: m[0].z_order,
+        )
 
-        instance_mask = [m.as_instance_mask(id if id is not None else 1 + idx)
-            for idx, (m, id, _) in enumerate(instance_masks)]
+        instance_mask = [
+            m.as_instance_mask(id if id is not None else 1 + idx)
+            for idx, (m, id, _) in enumerate(instance_masks)
+        ]
         instance_mask = merge_masks(instance_mask)
 
         cls_mask = [m.as_class_mask(c) for m, _, c in instance_masks]
@@ -270,11 +287,14 @@ class CompiledMask:
 
     def get_instance_labels(self):
         class_shift = 16
-        m = (self.class_mask.astype(np.uint32) << class_shift) \
-            + self.instance_mask.astype(np.uint32)
+        m = (
+            self.class_mask.astype(np.uint32) << class_shift
+        ) + self.instance_mask.astype(np.uint32)
         keys = np.unique(m)
-        instance_labels = {k & ((1 << class_shift) - 1): k >> class_shift
-            for k in keys if k & ((1 << class_shift) - 1) != 0
+        instance_labels = {
+            k & ((1 << class_shift) - 1): k >> class_shift
+            for k in keys
+            if k & ((1 << class_shift) - 1) != 0
         }
         return instance_labels
 
@@ -284,12 +304,13 @@ class CompiledMask:
     def lazy_extract(self, instance_id):
         return lambda: self.extract(instance_id)
 
+
 @attrs
 class _Shape(Annotation):
-    points = attrib(converter=lambda x:
-        [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x])
-    label = attrib(converter=attr.converters.optional(int),
-        default=None, kw_only=True)
+    points = attrib(
+        converter=lambda x: [round(p, _COORDINATE_ROUNDING_DIGITS) for p in x]
+    )
+    label = attrib(converter=attr.converters.optional(int), default=None, kw_only=True)
     z_order = attrib(default=0, validator=default_if_none(int), kw_only=True)
 
     def get_area(self):
@@ -308,6 +329,7 @@ class _Shape(Annotation):
         y1 = max(ys)
         return [x0, y0, x1 - x0, y1 - y0]
 
+
 @attrs
 class PolyLine(_Shape):
     _type = AnnotationType.polyline
@@ -318,6 +340,7 @@ class PolyLine(_Shape):
     def get_area(self):
         return 0
 
+
 @attrs
 class Polygon(_Shape):
     _type = AnnotationType.polygon
@@ -325,7 +348,9 @@ class Polygon(_Shape):
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
         # keep the message on a single line to produce informative output
-        assert len(self.points) % 2 == 0 and 3 <= len(self.points) // 2, "Wrong polygon points: %s" % self.points
+        assert len(self.points) % 2 == 0 and 3 <= len(self.points) // 2, (
+            "Wrong polygon points: %s" % self.points
+        )
 
     def get_area(self):
         import pycocotools.mask as mask_utils
@@ -335,6 +360,7 @@ class Polygon(_Shape):
         area = mask_utils.area(rle)[0]
         return area
 
+
 @attrs
 class Bbox(_Shape):
     _type = AnnotationType.bbox
@@ -342,9 +368,10 @@ class Bbox(_Shape):
     # will be overridden by attrs, then will be overridden again by us
     # attrs' method will be renamed to __attrs_init__
     def __init__(self, x, y, w, h, *args, **kwargs):
-        kwargs.pop('points', None) # comes from wrap()
+        kwargs.pop("points", None)  # comes from wrap()
         self.__attrs_init__([x, y, x + w, y + h], *args, **kwargs)
-    __actual_init__ = __init__ # save pointer
+
+    __actual_init__ = __init__  # save pointer
 
     @property
     def x(self):
@@ -370,25 +397,23 @@ class Bbox(_Shape):
 
     def as_polygon(self):
         x, y, w, h = self.get_bbox()
-        return [
-            x, y,
-            x + w, y,
-            x + w, y + h,
-            x, y + h
-        ]
+        return [x, y, x + w, y, x + w, y + h, x, y + h]
 
     def iou(self, other):
         from datumaro.util.annotation_util import bbox_iou
+
         return bbox_iou(self.get_bbox(), other.get_bbox())
 
     def wrap(item, **kwargs):
-        d = {'x': item.x, 'y': item.y, 'w': item.w, 'h': item.h}
+        d = {"x": item.x, "y": item.y, "w": item.w, "h": item.h}
         d.update(kwargs)
         return attr.evolve(item, **d)
 
-assert not hasattr(Bbox, '__attrs_init__') # hopefully, it will be supported
-setattr(Bbox, '__attrs_init__', Bbox.__init__)
-setattr(Bbox, '__init__', Bbox.__actual_init__)
+
+assert not hasattr(Bbox, "__attrs_init__")  # hopefully, it will be supported
+setattr(Bbox, "__attrs_init__", Bbox.__init__)
+setattr(Bbox, "__init__", Bbox.__actual_init__)
+
 
 @attrs
 class PointsCategories(Categories):
@@ -423,16 +448,21 @@ class PointsCategories(Categories):
         joints = set(map(tuple, joints))
         self.items[label_id] = self.Category(labels, joints)
 
+
 @attrs
 class Points(_Shape):
-    Visibility = Enum('Visibility', [
-        ('absent', 0),
-        ('hidden', 1),
-        ('visible', 2),
-    ])
+    Visibility = Enum(
+        "Visibility",
+        [
+            ("absent", 0),
+            ("hidden", 1),
+            ("visible", 2),
+        ],
+    )
     _type = AnnotationType.points
 
     visibility = attrib(type=list, default=None)
+
     @visibility.validator
     def _visibility_validator(self, attribute, visibility):
         if visibility is None:
@@ -452,15 +482,22 @@ class Points(_Shape):
         return 0
 
     def get_bbox(self):
-        xs = [p for p, v in zip(self.points[0::2], self.visibility)
-            if v != __class__.Visibility.absent]
-        ys = [p for p, v in zip(self.points[1::2], self.visibility)
-            if v != __class__.Visibility.absent]
+        xs = [
+            p
+            for p, v in zip(self.points[0::2], self.visibility)
+            if v != __class__.Visibility.absent
+        ]
+        ys = [
+            p
+            for p, v in zip(self.points[1::2], self.visibility)
+            if v != __class__.Visibility.absent
+        ]
         x0 = min(xs, default=0)
         x1 = max(xs, default=0)
         y0 = min(ys, default=0)
         y1 = max(ys, default=0)
         return [x0, y0, x1 - x0, y1 - y0]
+
 
 @attrs
 class Caption(Annotation):
@@ -468,17 +505,20 @@ class Caption(Annotation):
     caption = attrib(converter=str)
 
 
-DEFAULT_SUBSET_NAME = 'default'
+DEFAULT_SUBSET_NAME = "default"
+
 
 @attrs
 class DatasetItem:
-    id = attrib(converter=lambda x: str(x).replace('\\', '/'),
-        type=str, validator=not_empty)
+    id = attrib(
+        converter=lambda x: str(x).replace("\\", "/"), type=str, validator=not_empty
+    )
     annotations = attrib(factory=list, validator=default_if_none(list))
     subset = attrib(converter=lambda v: v or DEFAULT_SUBSET_NAME, default=None)
     path = attrib(factory=list, validator=default_if_none(list))
 
     image = attrib(type=Image, default=None)
+
     @image.validator
     def _image_validator(self, attribute, image):
         if callable(image) or isinstance(image, np.ndarray):
@@ -496,6 +536,7 @@ class DatasetItem:
 
     def wrap(item, **kwargs):
         return attr.evolve(item, **kwargs)
+
 
 class IExtractor:
     def __iter__(self):
@@ -515,6 +556,7 @@ class IExtractor:
 
     def select(self, pred):
         raise NotImplementedError()
+
 
 class Extractor(IExtractor):
     def __init__(self, length=None, subsets=None):
@@ -541,8 +583,9 @@ class Extractor(IExtractor):
     def subsets(self) -> Dict[str, IExtractor]:
         if self._subsets is None:
             self._init_cache()
-        return {name or DEFAULT_SUBSET_NAME: self.get_subset(name)
-            for name in self._subsets}
+        return {
+            name or DEFAULT_SUBSET_NAME: self.get_subset(name) for name in self._subsets
+        }
 
     def get_subset(self, name):
         if self._subsets is None:
@@ -550,8 +593,10 @@ class Extractor(IExtractor):
         if name in self._subsets:
             return self.select(lambda item: item.subset == name)
         else:
-            raise Exception("Unknown subset '%s', available subsets: %s" % \
-                (name, set(self._subsets)))
+            raise Exception(
+                "Unknown subset '%s', available subsets: %s"
+                % (name, set(self._subsets))
+            )
 
     def transform(self, method, *args, **kwargs):
         return method(self, *args, **kwargs)
@@ -560,8 +605,10 @@ class Extractor(IExtractor):
         class _DatasetFilter(Extractor):
             def __init__(self, _):
                 super().__init__()
+
             def __iter__(_):
                 return filter(pred, iter(self))
+
             def categories(_):
                 return self.categories()
 
@@ -569,6 +616,7 @@ class Extractor(IExtractor):
 
     def categories(self):
         return {}
+
 
 class SourceExtractor(Extractor):
     def __init__(self, length=None, subset=None):
@@ -587,6 +635,7 @@ class SourceExtractor(Extractor):
     def __len__(self):
         return len(self._items)
 
+
 class Importer:
     @classmethod
     def detect(cls, path):
@@ -597,7 +646,8 @@ class Importer:
         raise NotImplementedError()
 
     def __call__(self, path, **extra_params):
-        from datumaro.components.project import Project # cyclic import
+        from datumaro.components.project import Project  # cyclic import
+
         project = Project()
 
         sources = self.find_sources(osp.normpath(path))
@@ -606,22 +656,25 @@ class Importer:
 
         for desc in sources:
             params = dict(extra_params)
-            params.update(desc.get('options', {}))
-            desc['options'] = params
+            params.update(desc.get("options", {}))
+            desc["options"] = params
 
-            source_name = osp.splitext(osp.basename(desc['url']))[0]
+            source_name = osp.splitext(osp.basename(desc["url"]))[0]
             project.add_source(source_name, desc)
 
         return project
 
     @classmethod
-    def _find_sources_recursive(cls, path, ext, extractor_name, filename='*'):
+    def _find_sources_recursive(cls, path, ext, extractor_name, filename="*"):
         if path.endswith(ext) and osp.isfile(path):
-            sources = [{'url': path, 'format': extractor_name}]
+            sources = [{"url": path, "format": extractor_name}]
         else:
-            sources = [{'url': p, 'format': extractor_name} for p in
-                glob(osp.join(path, '**', filename + ext), recursive=True)]
+            sources = [
+                {"url": p, "format": extractor_name}
+                for p in glob(osp.join(path, "**", filename + ext), recursive=True)
+            ]
         return sources
+
 
 class Transform(Extractor):
     @staticmethod
@@ -646,10 +699,12 @@ class Transform(Extractor):
         return self._subsets
 
     def __len__(self):
-        assert self._length in {None, 'parent'} or isinstance(self._length, int)
-        if self._length is None and \
-                    self.__iter__.__func__ == Transform.__iter__ \
-                or self._length == 'parent':
+        assert self._length in {None, "parent"} or isinstance(self._length, int)
+        if (
+            self._length is None
+            and self.__iter__.__func__ == Transform.__iter__
+            or self._length == "parent"
+        ):
             self._length = len(self._extractor)
         return super().__len__()
 

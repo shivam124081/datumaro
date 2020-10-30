@@ -14,8 +14,12 @@ import shutil
 import sys
 
 from datumaro.components.config import Config, DEFAULT_FORMAT
-from datumaro.components.config_model import (Model, Source,
-    PROJECT_DEFAULT_CONFIG, PROJECT_SCHEMA)
+from datumaro.components.config_model import (
+    Model,
+    Source,
+    PROJECT_DEFAULT_CONFIG,
+    PROJECT_SCHEMA,
+)
 from datumaro.components.launcher import ModelTransform
 from datumaro.components.dataset import Dataset
 
@@ -24,10 +28,12 @@ def import_foreign_module(name, path, package=None):
     module = None
     default_path = sys.path.copy()
     try:
-        sys.path = [ osp.abspath(path), ] + default_path
-        sys.modules.pop(name, None) # remove from cache
+        sys.path = [
+            osp.abspath(path),
+        ] + default_path
+        sys.modules.pop(name, None)  # remove from cache
         module = importlib.import_module(name, package=package)
-        sys.modules.pop(name) # remove from cache
+        sys.modules.pop(name)  # remove from cache
     except Exception:
         raise
     finally:
@@ -57,7 +63,7 @@ class Registry:
         return self.items.pop(name, None)
 
     def get(self, key):
-        return self.items[key] # returns a class / ctor
+        return self.items[key]  # returns a class / ctor
 
 
 class ModelRegistry(Registry):
@@ -66,7 +72,7 @@ class ModelRegistry(Registry):
 
     def load(self, config):
         # TODO: list default dir, insert values
-        if 'models' in config:
+        if "models" in config:
             for name, model in config.models.items():
                 self.register(name, model)
 
@@ -77,9 +83,10 @@ class SourceRegistry(Registry):
 
     def load(self, config):
         # TODO: list default dir, insert values
-        if 'sources' in config:
+        if "sources" in config:
             for name, source in config.sources.items():
                 self.register(name, source)
+
 
 class PluginRegistry(Registry):
     def __init__(self, config=None, builtin=None, local=None):
@@ -96,6 +103,7 @@ class PluginRegistry(Registry):
                 k = CliPlugin._get_name(v)
                 self.register(k, v)
 
+
 class GitWrapper:
     def __init__(self, config=None):
         self.repo = None
@@ -105,19 +113,19 @@ class GitWrapper:
 
     @staticmethod
     def _git_dir(base_path):
-        return osp.join(base_path, '.git')
+        return osp.join(base_path, ".git")
 
     @classmethod
     def spawn(cls, path):
         spawn = not osp.isdir(cls._git_dir(path))
         repo = git.Repo.init(path=path)
         if spawn:
-            repo.config_writer().set_value("user", "name", "User") \
-                .set_value("user", "email", "user@nowhere.com") \
-                .release()
+            repo.config_writer().set_value("user", "name", "User").set_value(
+                "user", "email", "user@nowhere.com"
+            ).release()
             # gitpython does not support init, use git directly
             repo.git.init()
-            repo.git.commit('-m', 'Initial commit', '--allow-empty')
+            repo.git.commit("-m", "Initial commit", "--allow-empty")
         return repo
 
     def init(self, path):
@@ -136,17 +144,18 @@ class GitWrapper:
     def remove_submodule(self, name, **kwargs):
         return self.repo.submodule(name).remove(**kwargs)
 
+
 def load_project_as_dataset(url):
     # symbol forward declaration
     raise NotImplementedError()
 
+
 class Environment:
     _builtin_plugins = None
-    PROJECT_EXTRACTOR_NAME = 'datumaro_project'
+    PROJECT_EXTRACTOR_NAME = "datumaro_project"
 
     def __init__(self, config=None):
-        config = Config(config,
-            fallback=PROJECT_DEFAULT_CONFIG, schema=PROJECT_SCHEMA)
+        config = Config(config, fallback=PROJECT_DEFAULT_CONFIG, schema=PROJECT_SCHEMA)
 
         self.models = ModelRegistry(config)
         self.sources = SourceRegistry(config)
@@ -162,28 +171,24 @@ class Environment:
         from datumaro.components.extractor import Importer
         from datumaro.components.converter import Converter
         from datumaro.components.launcher import Launcher
+
         self.extractors = PluginRegistry(
             builtin=select(builtin, SourceExtractor),
-            local=select(custom, SourceExtractor)
+            local=select(custom, SourceExtractor),
         )
-        self.extractors.register(self.PROJECT_EXTRACTOR_NAME,
-            load_project_as_dataset)
+        self.extractors.register(self.PROJECT_EXTRACTOR_NAME, load_project_as_dataset)
 
         self.importers = PluginRegistry(
-            builtin=select(builtin, Importer),
-            local=select(custom, Importer)
+            builtin=select(builtin, Importer), local=select(custom, Importer)
         )
         self.launchers = PluginRegistry(
-            builtin=select(builtin, Launcher),
-            local=select(custom, Launcher)
+            builtin=select(builtin, Launcher), local=select(custom, Launcher)
         )
         self.converters = PluginRegistry(
-            builtin=select(builtin, Converter),
-            local=select(custom, Converter)
+            builtin=select(builtin, Converter), local=select(custom, Converter)
         )
         self.transforms = PluginRegistry(
-            builtin=select(builtin, Transform),
-            local=select(custom, Transform)
+            builtin=select(builtin, Transform), local=select(custom, Transform)
         )
 
     @staticmethod
@@ -194,32 +199,39 @@ class Environment:
 
         for plugin_name in os.listdir(plugins_dir):
             p = osp.join(plugins_dir, plugin_name)
-            if osp.isfile(p) and p.endswith('.py'):
+            if osp.isfile(p) and p.endswith(".py"):
                 plugins.append((plugins_dir, plugin_name, None))
             elif osp.isdir(p):
-                plugins += [(plugins_dir,
-                        osp.splitext(plugin_name)[0] + '.' + osp.basename(p),
-                        osp.splitext(plugin_name)[0]
+                plugins += [
+                    (
+                        plugins_dir,
+                        osp.splitext(plugin_name)[0] + "." + osp.basename(p),
+                        osp.splitext(plugin_name)[0],
                     )
-                    for p in glob(osp.join(p, '*.py'))]
+                    for p in glob(osp.join(p, "*.py"))
+                ]
         return plugins
 
     @classmethod
     def _import_module(cls, module_dir, module_name, types, package=None):
-        module = import_foreign_module(osp.splitext(module_name)[0], module_dir,
-            package=package)
+        module = import_foreign_module(
+            osp.splitext(module_name)[0], module_dir, package=package
+        )
 
         exports = []
-        if hasattr(module, 'exports'):
+        if hasattr(module, "exports"):
             exports = module.exports
         else:
             for symbol in dir(module):
-                if symbol.startswith('_'):
+                if symbol.startswith("_"):
                     continue
                 exports.append(getattr(module, symbol))
 
-        exports = [s for s in exports
-            if inspect.isclass(s) and issubclass(s, types) and not s in types]
+        exports = [
+            s
+            for s in exports
+            if inspect.isclass(s) and issubclass(s, types) and not s in types
+        ]
 
         return exports
 
@@ -232,12 +244,11 @@ class Environment:
         all_exports = []
         for module_dir, module_name, package in plugins:
             try:
-                exports = cls._import_module(module_dir, module_name, types,
-                    package)
+                exports = cls._import_module(module_dir, module_name, types, package)
             except Exception as e:
                 module_search_error = ImportError
                 try:
-                    module_search_error = ModuleNotFoundError # python 3.6+
+                    module_search_error = ModuleNotFoundError  # python 3.6+
                 except NameError:
                     pass
 
@@ -248,11 +259,9 @@ class Environment:
                     log.warning(*message)
                 continue
 
-            log.debug("Imported the following symbols from %s: %s" % \
-                (
-                    module_name,
-                    ', '.join(s.__name__ for s in exports)
-                )
+            log.debug(
+                "Imported the following symbols from %s: %s"
+                % (module_name, ", ".join(s.__name__ for s in exports))
             )
             all_exports.extend(exports)
 
@@ -262,8 +271,8 @@ class Environment:
     def _load_builtin_plugins(cls):
         if not cls._builtin_plugins:
             plugins_dir = osp.join(
-                __file__[: __file__.rfind(osp.join('datumaro', 'components'))],
-                osp.join('datumaro', 'plugins')
+                __file__[: __file__.rfind(osp.join("datumaro", "components"))],
+                osp.join("datumaro", "plugins"),
             )
             assert osp.isdir(plugins_dir), plugins_dir
             cls._builtin_plugins = cls._load_plugins2(plugins_dir)
@@ -276,6 +285,7 @@ class Environment:
         from datumaro.components.extractor import Importer
         from datumaro.components.converter import Converter
         from datumaro.components.launcher import Launcher
+
         types = [SourceExtractor, Converter, Importer, Launcher, Transform]
 
         return cls._load_plugins(plugins_dir, types)
@@ -297,6 +307,7 @@ class Environment:
 
     def unregister_model(self, name):
         self.models.unregister(name)
+
 
 class ProjectDataset(Dataset):
     def __init__(self, project):
@@ -322,14 +333,16 @@ class ProjectDataset(Dataset):
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
         if config.project_dir and osp.isdir(own_source_dir):
             log.disable(log.INFO)
-            own_source = env.make_importer(DEFAULT_FORMAT)(own_source_dir) \
-                .make_dataset()
+            own_source = env.make_importer(DEFAULT_FORMAT)(
+                own_source_dir
+            ).make_dataset()
             log.disable(log.NOTSET)
 
         # merge categories
         # TODO: implement properly with merging and annotations remapping
-        categories = self._merge_categories(s.categories()
-            for s in self._sources.values())
+        categories = self._merge_categories(
+            s.categories() for s in self._sources.values()
+        )
         # ovewrite with own categories
         if own_source is not None and (not categories or len(own_source) != 0):
             categories.update(own_source.categories())
@@ -344,12 +357,11 @@ class ProjectDataset(Dataset):
                 if existing_item is not None:
                     path = existing_item.path
                     if item.path != path:
-                        path = None # NOTE: move to our own dataset
+                        path = None  # NOTE: move to our own dataset
                     item = self._merge_items(existing_item, item, path=path)
                 else:
                     s_config = config.sources[source_name]
-                    if s_config and \
-                            s_config.format != env.PROJECT_EXTRACTOR_NAME:
+                    if s_config and s_config.format != env.PROJECT_EXTRACTOR_NAME:
                         # NOTE: consider imported sources as our own dataset
                         path = None
                     else:
@@ -364,15 +376,16 @@ class ProjectDataset(Dataset):
             for item in own_source:
                 existing_item = subsets[item.subset].items.get(item.id)
                 if existing_item is not None:
-                    item = item.wrap(path=None,
-                        image=self._merge_images(existing_item, item))
+                    item = item.wrap(
+                        path=None, image=self._merge_images(existing_item, item)
+                    )
 
                 subsets[item.subset].items[item.id] = item
 
         # TODO: implement subset remapping when needed
         subsets_filter = config.subsets
         if len(subsets_filter) != 0:
-            subsets = { k: v for k, v in subsets.items() if k in subsets_filter}
+            subsets = {k: v for k, v in subsets.items() if k in subsets_filter}
         self._subsets = dict(subsets)
 
         self._length = None
@@ -385,7 +398,8 @@ class ProjectDataset(Dataset):
             source = path[0]
             rest_path = path[1:]
             return self._sources[source].get(
-                item_id=item_id, subset=subset, path=rest_path)
+                item_id=item_id, subset=subset, path=rest_path
+            )
         return super().get(item_id, subset)
 
     def put(self, item, item_id=None, subset=None, path=None):
@@ -396,8 +410,9 @@ class ProjectDataset(Dataset):
             source = path[0]
             rest_path = path[1:]
             # TODO: reverse remapping
-            self._sources[source].put(item,
-                item_id=item_id, subset=subset, path=rest_path)
+            self._sources[source].put(
+                item, item_id=item_id, subset=subset, path=rest_path
+            )
 
         if item_id is None:
             item_id = item.id
@@ -412,8 +427,7 @@ class ProjectDataset(Dataset):
 
         return item
 
-    def save(self, save_dir=None, merge=False, recursive=True,
-            save_images=False):
+    def save(self, save_dir=None, merge=False, recursive=True, save_images=False):
         if save_dir is None:
             assert self.config.project_dir
             save_dir = self.config.project_dir
@@ -423,13 +437,13 @@ class ProjectDataset(Dataset):
 
         if merge:
             project = Project(Config(self.config))
-            project.config.remove('sources')
+            project.config.remove("sources")
 
         save_dir = osp.abspath(save_dir)
         dataset_save_dir = osp.join(save_dir, project.config.dataset_dir)
 
         converter_kwargs = {
-            'save_images': save_images,
+            "save_images": save_images,
         }
 
         save_dir_existed = osp.exists(save_dir)
@@ -440,7 +454,8 @@ class ProjectDataset(Dataset):
             if merge:
                 # merge and save the resulting dataset
                 self.env.converters.get(DEFAULT_FORMAT).convert(
-                    self, dataset_save_dir, **converter_kwargs)
+                    self, dataset_save_dir, **converter_kwargs
+                )
             else:
                 if recursive:
                     # children items should already be updated
@@ -450,7 +465,8 @@ class ProjectDataset(Dataset):
                             source.save(**converter_kwargs)
 
                 self.env.converters.get(DEFAULT_FORMAT).convert(
-                    self.iterate_own(), dataset_save_dir, **converter_kwargs)
+                    self.iterate_own(), dataset_save_dir, **converter_kwargs
+                )
 
             project.save(save_dir)
         except BaseException:
@@ -471,7 +487,7 @@ class ProjectDataset(Dataset):
         return self._sources
 
     def _save_branch_project(self, extractor, save_dir=None):
-        extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+        extractor = Dataset.from_extractors(extractor)  # apply lazy transforms
 
         # NOTE: probably this function should be in the ViewModel layer
         save_dir = osp.abspath(save_dir)
@@ -479,13 +495,15 @@ class ProjectDataset(Dataset):
             dst_project = Project()
         else:
             if not self.config.project_dir:
-                raise Exception("Either a save directory or a project "
-                    "directory should be specified")
+                raise Exception(
+                    "Either a save directory or a project "
+                    "directory should be specified"
+                )
             save_dir = self.config.project_dir
 
             dst_project = Project(Config(self.config))
-            dst_project.config.remove('project_dir')
-            dst_project.config.remove('sources')
+            dst_project.config.remove("project_dir")
+            dst_project.config.remove("sources")
         dst_project.config.project_name = osp.basename(save_dir)
 
         dst_dataset = dst_project.make_dataset()
@@ -507,17 +525,26 @@ class ProjectDataset(Dataset):
         if isinstance(model, str):
             launcher = self._project.make_executable_model(model)
 
-        self.transform_project(ModelTransform, launcher=launcher,
-            save_dir=save_dir, batch_size=batch_size)
+        self.transform_project(
+            ModelTransform, launcher=launcher, save_dir=save_dir, batch_size=batch_size
+        )
 
-    def export_project(self, save_dir, converter,
-            filter_expr=None, filter_annotations=False, remove_empty=False):
+    def export_project(
+        self,
+        save_dir,
+        converter,
+        filter_expr=None,
+        filter_annotations=False,
+        remove_empty=False,
+    ):
         # NOTE: probably this function should be in the ViewModel layer
         dataset = self
         if filter_expr:
-            dataset = dataset.filter(filter_expr,
+            dataset = dataset.filter(
+                filter_expr,
                 filter_annotations=filter_annotations,
-                remove_empty=remove_empty)
+                remove_empty=remove_empty,
+            )
 
         save_dir = osp.abspath(save_dir)
         save_dir_existed = osp.exists(save_dir)
@@ -529,22 +556,29 @@ class ProjectDataset(Dataset):
                 shutil.rmtree(save_dir)
             raise
 
-    def filter_project(self, filter_expr, filter_annotations=False,
-            save_dir=None, remove_empty=False):
+    def filter_project(
+        self, filter_expr, filter_annotations=False, save_dir=None, remove_empty=False
+    ):
         # NOTE: probably this function should be in the ViewModel layer
         dataset = self
         if filter_expr:
-            dataset = dataset.filter(filter_expr,
+            dataset = dataset.filter(
+                filter_expr,
                 filter_annotations=filter_annotations,
-                remove_empty=remove_empty)
+                remove_empty=remove_empty,
+            )
         self._save_branch_project(dataset, save_dir=save_dir)
+
 
 class Project:
     @classmethod
     def load(cls, path):
         path = osp.abspath(path)
-        config_path = osp.join(path, PROJECT_DEFAULT_CONFIG.env_dir,
-            PROJECT_DEFAULT_CONFIG.project_filename)
+        config_path = osp.join(
+            path,
+            PROJECT_DEFAULT_CONFIG.env_dir,
+            PROJECT_DEFAULT_CONFIG.project_filename,
+        )
         config = Config.parse(config_path)
         config.project_dir = path
         config.project_filename = osp.basename(config_path)
@@ -592,8 +626,9 @@ class Project:
         return importer(path, **kwargs)
 
     def __init__(self, config=None):
-        self.config = Config(config,
-            fallback=PROJECT_DEFAULT_CONFIG, schema=PROJECT_SCHEMA)
+        self.config = Config(
+            config, fallback=PROJECT_DEFAULT_CONFIG, schema=PROJECT_SCHEMA
+        )
         self.env = Environment(self.config)
 
     def make_dataset(self):
@@ -620,7 +655,7 @@ class Project:
 
     def set_subsets(self, value):
         if not value:
-            self.config.remove('subsets')
+            self.config.remove("subsets")
         else:
             self.config.subsets = value
 
@@ -642,28 +677,31 @@ class Project:
 
     def make_executable_model(self, name):
         model = self.get_model(name)
-        return self.env.make_launcher(model.launcher,
-            **model.options, model_dir=self.local_model_dir(name))
+        return self.env.make_launcher(
+            model.launcher, **model.options, model_dir=self.local_model_dir(name)
+        )
 
     def make_source_project(self, name):
         source = self.get_source(name)
 
         config = Config(self.config)
-        config.remove('sources')
-        config.remove('subsets')
+        config.remove("sources")
+        config.remove("subsets")
         project = Project(config)
         project.add_source(name, source)
         return project
 
     def local_model_dir(self, model_name):
-        return osp.join(
-            self.config.env_dir, self.config.models_dir, model_name)
+        return osp.join(self.config.env_dir, self.config.models_dir, model_name)
 
     def local_source_dir(self, source_name):
         return osp.join(self.config.sources_dir, source_name)
+
 
 # pylint: disable=function-redefined
 def load_project_as_dataset(url):
     # implement the function declared above
     return Project.load(url).make_dataset()
+
+
 # pylint: enable=function-redefined

@@ -22,7 +22,7 @@ class RiseTest(TestCase):
             def _process(self, image):
                 roi = self.roi
                 roi_area = (roi[1] - roi[0]) * (roi[3] - roi[2])
-                if 0.5 * roi_area < np.sum(image[roi[0]:roi[1], roi[2]:roi[3], 0]):
+                if 0.5 * roi_area < np.sum(image[roi[0] : roi[1], roi[2] : roi[3], 0]):
                     cls = 0
                 else:
                     cls = 1
@@ -31,8 +31,7 @@ class RiseTest(TestCase):
                 other_conf = (1.0 - cls_conf) / (self.class_count - 1)
 
                 return [
-                    Label(i, attributes={
-                        'score': cls_conf if cls == i else other_conf }) \
+                    Label(i, attributes={"score": cls_conf if cls == i else other_conf})
                     for i in range(self.class_count)
                 ]
 
@@ -51,28 +50,30 @@ class RiseTest(TestCase):
 
         h_sum = np.sum(heatmap)
         h_area = np.prod(heatmap.shape)
-        roi_sum = np.sum(heatmap[roi[0]:roi[1], roi[2]:roi[3]])
+        roi_sum = np.sum(heatmap[roi[0] : roi[1], roi[2] : roi[3]])
         roi_area = (roi[1] - roi[0]) * (roi[3] - roi[2])
         roi_den = roi_sum / roi_area
         hrest_den = (h_sum - roi_sum) / (h_area - roi_area)
         self.assertLess(hrest_den, roi_den)
 
     def test_rise_can_be_applied_to_detection_model(self):
-        ROI = namedtuple('ROI',
-            ['threshold', 'x', 'y', 'w', 'h', 'label'])
+        ROI = namedtuple("ROI", ["threshold", "x", "y", "w", "h", "label"])
 
         class TestLauncher(Launcher):
-            def __init__(self, rois, class_count, fp_count=4, pixel_jitter=20, **kwargs):
+            def __init__(
+                self, rois, class_count, fp_count=4, pixel_jitter=20, **kwargs
+            ):
                 self.rois = rois
-                self.roi_base_sums = [None, ] * len(rois)
+                self.roi_base_sums = [
+                    None,
+                ] * len(rois)
                 self.class_count = class_count
                 self.fp_count = fp_count
                 self.pixel_jitter = pixel_jitter
 
             @staticmethod
             def roi_value(roi, image):
-                return np.sum(
-                    image[roi.y:roi.y + roi.h, roi.x:roi.x + roi.w, :])
+                return np.sum(image[roi.y : roi.y + roi.h, roi.x : roi.x + roi.w, :])
 
             def launch(self, inputs):
                 for inp in inputs:
@@ -93,8 +94,14 @@ class RiseTest(TestCase):
                     if roi.threshold < roi_sum / roi_base_sum:
                         cls = roi.label
                         detections.append(
-                            Bbox(roi.x, roi.y, roi.w, roi.h,
-                                label=cls, attributes={'score': cls_conf})
+                            Bbox(
+                                roi.x,
+                                roi.y,
+                                roi.w,
+                                roi.h,
+                                label=cls,
+                                attributes={"score": cls_conf},
+                            )
                         )
 
                     if first_run:
@@ -107,8 +114,11 @@ class RiseTest(TestCase):
                         box = [roi.x, roi.y, roi.w, roi.h]
                         offset = (np.random.rand(4) - 0.5) * self.pixel_jitter
                         detections.append(
-                            Bbox(*(box + offset),
-                                label=cls, attributes={'score': cls_conf})
+                            Bbox(
+                                *(box + offset),
+                                label=cls,
+                                attributes={"score": cls_conf}
+                            )
                         )
 
                 return detections
@@ -139,8 +149,7 @@ class RiseTest(TestCase):
             for i, roi in enumerate(rois):
                 if roi.label != c:
                     continue
-                class_roi[roi.y:roi.y + roi.h, roi.x:roi.x + roi.w] \
-                    += roi.threshold
+                class_roi[roi.y : roi.y + roi.h, roi.x : roi.x + roi.w] += roi.threshold
 
             heatmap = heatmaps[c]
 
@@ -162,7 +171,7 @@ class RiseTest(TestCase):
             heatmap = heatmaps[heatmaps_class_count + i]
             h_sum = np.sum(heatmap)
             h_area = np.prod(heatmap.shape)
-            roi_sum = np.sum(heatmap[roi.y:roi.y + roi.h, roi.x:roi.x + roi.w])
+            roi_sum = np.sum(heatmap[roi.y : roi.y + roi.h, roi.x : roi.x + roi.w])
             roi_area = roi.h * roi.w
             roi_den = roi_sum / roi_area
             hrest_den = (h_sum - roi_sum) / (h_area - roi_area)
@@ -173,8 +182,7 @@ class RiseTest(TestCase):
 
     @staticmethod
     def DISABLED_test_roi_nms():
-        ROI = namedtuple('ROI',
-            ['conf', 'x', 'y', 'w', 'h', 'label'])
+        ROI = namedtuple("ROI", ["conf", "x", "y", "w", "h", "label"])
 
         class_count = 3
         noisy_count = 3
@@ -189,8 +197,14 @@ class RiseTest(TestCase):
         detections = []
         for i, roi in enumerate(rois):
             detections.append(
-                Bbox(roi.x, roi.y, roi.w, roi.h,
-                    label=roi.label, attributes={'score': roi.conf})
+                Bbox(
+                    roi.x,
+                    roi.y,
+                    roi.w,
+                    roi.h,
+                    label=roi.label,
+                    attributes={"score": roi.conf},
+                )
             )
 
             for j in range(noisy_count):
@@ -199,33 +213,45 @@ class RiseTest(TestCase):
                 box = [roi.x, roi.y, roi.w, roi.h]
                 offset = (np.random.rand(4) - 0.5) * pixel_jitter
                 detections.append(
-                    Bbox(*(box + offset),
-                        label=cls, attributes={'score': cls_conf})
+                    Bbox(*(box + offset), label=cls, attributes={"score": cls_conf})
                 )
 
         import cv2
+
         image = np.zeros((100, 100, 3))
         for i, det in enumerate(detections):
-            roi = ROI(det.attributes['score'], *det.get_bbox(), det.label)
+            roi = ROI(det.attributes["score"], *det.get_bbox(), det.label)
             p1 = (int(roi.x), int(roi.y))
             p2 = (int(roi.x + roi.w), int(roi.y + roi.h))
             c = (0, 1 * (i % (1 + noisy_count) == 0), 1)
             cv2.rectangle(image, p1, p2, c)
-            cv2.putText(image, 'd%s-%s-%.2f' % (i, roi.label, roi.conf),
-                p1, cv2.FONT_HERSHEY_SIMPLEX, 0.25, c)
-        cv2.imshow('nms_image', image)
+            cv2.putText(
+                image,
+                "d%s-%s-%.2f" % (i, roi.label, roi.conf),
+                p1,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.25,
+                c,
+            )
+        cv2.imshow("nms_image", image)
         cv2.waitKey(0)
 
         nms_boxes = RISE.nms(detections, iou_thresh=0.25)
         print(len(detections), len(nms_boxes))
 
         for i, det in enumerate(nms_boxes):
-            roi = ROI(det.attributes['score'], *det.get_bbox(), det.label)
+            roi = ROI(det.attributes["score"], *det.get_bbox(), det.label)
             p1 = (int(roi.x), int(roi.y))
             p2 = (int(roi.x + roi.w), int(roi.y + roi.h))
             c = (0, 1, 0)
             cv2.rectangle(image, p1, p2, c)
-            cv2.putText(image, 'p%s-%s-%.2f' % (i, roi.label, roi.conf),
-                p1, cv2.FONT_HERSHEY_SIMPLEX, 0.25, c)
-        cv2.imshow('nms_image', image)
+            cv2.putText(
+                image,
+                "p%s-%s-%.2f" % (i, roi.label, roi.conf),
+                p1,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.25,
+                c,
+            )
+        cv2.imshow("nms_image", image)
         cv2.waitKey(0)

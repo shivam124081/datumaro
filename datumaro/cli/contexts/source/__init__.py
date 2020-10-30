@@ -1,4 +1,3 @@
-
 # Copyright (C) 2019-2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -18,16 +17,25 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
     builtins = sorted(Environment().extractors.items)
 
     base_parser = argparse.ArgumentParser(add_help=False)
-    base_parser.add_argument('-n', '--name', default=None,
-        help="Name of the new source")
-    base_parser.add_argument('-f', '--format', required=True,
-        help="Source dataset format")
-    base_parser.add_argument('--skip-check', action='store_true',
-        help="Skip source checking")
-    base_parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
+    base_parser.add_argument(
+        "-n", "--name", default=None, help="Name of the new source"
+    )
+    base_parser.add_argument(
+        "-f", "--format", required=True, help="Source dataset format"
+    )
+    base_parser.add_argument(
+        "--skip-check", action="store_true", help="Skip source checking"
+    )
+    base_parser.add_argument(
+        "-p",
+        "--project",
+        dest="project_dir",
+        default=".",
+        help="Directory of the project to operate on (default: current dir)",
+    )
 
-    parser = parser_ctor(help="Add data source to project",
+    parser = parser_ctor(
+        help="Add data source to project",
         description="""
             Adds a data source to a project. The source can be:|n
             - a dataset in a supported format (check 'formats' section below)|n
@@ -61,53 +69,72 @@ def build_add_parser(parser_ctor=argparse.ArgumentParser):
             - Add a local file with CVAT annotations, call it 'mysource'|n
             |s|s|s|sto the project somewhere else:|n
             |s|sadd path path/to/cvat.xml -f cvat -n mysource -p somewhere/else/
-        """ % ('%(prog)s SOURCE_TYPE --help', ', '.join(builtins)),
+        """
+        % ("%(prog)s SOURCE_TYPE --help", ", ".join(builtins)),
         formatter_class=MultilineFormatter,
-        add_help=False)
+        add_help=False,
+    )
     parser.set_defaults(command=add_command)
 
-    sp = parser.add_subparsers(dest='source_type', metavar='SOURCE_TYPE',
+    sp = parser.add_subparsers(
+        dest="source_type",
+        metavar="SOURCE_TYPE",
         help="The type of the data source "
-            "(call '%s SOURCE_TYPE --help' for more info)" % parser.prog)
+        "(call '%s SOURCE_TYPE --help' for more info)" % parser.prog,
+    )
 
-    dir_parser = sp.add_parser('path', help="Add local path as source",
-        parents=[base_parser])
-    dir_parser.add_argument('url',
-        help="Path to the source")
-    dir_parser.add_argument('--copy', action='store_true',
-        help="Copy the dataset instead of saving source links")
+    dir_parser = sp.add_parser(
+        "path", help="Add local path as source", parents=[base_parser]
+    )
+    dir_parser.add_argument("url", help="Path to the source")
+    dir_parser.add_argument(
+        "--copy",
+        action="store_true",
+        help="Copy the dataset instead of saving source links",
+    )
 
-    repo_parser = sp.add_parser('git', help="Add git repository as source",
-        parents=[base_parser])
-    repo_parser.add_argument('url',
-        help="URL of the source git repository")
-    repo_parser.add_argument('-b', '--branch', default='master',
-        help="Branch of the source repository (default: %(default)s)")
-    repo_parser.add_argument('--checkout', action='store_true',
-        help="Do branch checkout")
+    repo_parser = sp.add_parser(
+        "git", help="Add git repository as source", parents=[base_parser]
+    )
+    repo_parser.add_argument("url", help="URL of the source git repository")
+    repo_parser.add_argument(
+        "-b",
+        "--branch",
+        default="master",
+        help="Branch of the source repository (default: %(default)s)",
+    )
+    repo_parser.add_argument(
+        "--checkout", action="store_true", help="Do branch checkout"
+    )
 
     # NOTE: add common parameters to the parent help output
     # the other way could be to use parse_known_args()
     display_parser = argparse.ArgumentParser(
         parents=[base_parser, parser],
-        prog=parser.prog, usage="%(prog)s [-h] SOURCE_TYPE ...",
-        description=parser.description, formatter_class=MultilineFormatter)
+        prog=parser.prog,
+        usage="%(prog)s [-h] SOURCE_TYPE ...",
+        description=parser.description,
+        formatter_class=MultilineFormatter,
+    )
+
     class HelpAction(argparse._HelpAction):
         def __call__(self, parser, namespace, values, option_string=None):
             display_parser.print_help()
             parser.exit()
 
-    parser.add_argument('-h', '--help', action=HelpAction,
-        help='show this help message and exit')
+    parser.add_argument(
+        "-h", "--help", action=HelpAction, help="show this help message and exit"
+    )
 
     # TODO: needed distinction on how to add an extractor or a remote source
 
     return parser
 
+
 def add_command(args):
     project = load_project(args.project_dir)
 
-    if args.source_type == 'git':
+    if args.source_type == "git":
         name = args.name
         if name is None:
             name = osp.splitext(osp.basename(args.url))[0]
@@ -124,9 +151,10 @@ def add_command(args):
         rel_local_dir = project.local_source_dir(name)
         local_dir = osp.join(project.config.project_dir, rel_local_dir)
         url = args.url
-        project.env.git.create_submodule(name, local_dir,
-            url=url, branch=args.branch, no_checkout=not args.checkout)
-    elif args.source_type == 'path':
+        project.env.git.create_submodule(
+            name, local_dir, url=url, branch=args.branch, no_checkout=not args.checkout
+        )
+    elif args.source_type == "path":
         url = osp.abspath(args.url)
         if not osp.exists(url):
             raise CliException("Source path '%s' does not exist" % url)
@@ -162,7 +190,7 @@ def add_command(args):
         else:
             os.makedirs(local_dir)
 
-    project.add_source(name, { 'url': url, 'format': args.format })
+    project.add_source(name, {"url": url, "format": args.format})
 
     if not args.skip_check:
         log.info("Checking the source...")
@@ -174,26 +202,39 @@ def add_command(args):
 
     project.save()
 
-    log.info("Source '%s' has been added to the project, location: '%s'" \
-        % (name, rel_local_dir))
+    log.info(
+        "Source '%s' has been added to the project, location: '%s'"
+        % (name, rel_local_dir)
+    )
 
     return 0
 
-def build_remove_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(help="Remove source from project",
-        description="Remove a source from a project.")
 
-    parser.add_argument('-n', '--name', required=True,
-        help="Name of the source to be removed")
-    parser.add_argument('--force', action='store_true',
-        help="Ignore possible errors during removal")
-    parser.add_argument('--keep-data', action='store_true',
-        help="Do not remove source data")
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
+def build_remove_parser(parser_ctor=argparse.ArgumentParser):
+    parser = parser_ctor(
+        help="Remove source from project", description="Remove a source from a project."
+    )
+
+    parser.add_argument(
+        "-n", "--name", required=True, help="Name of the source to be removed"
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Ignore possible errors during removal"
+    )
+    parser.add_argument(
+        "--keep-data", action="store_true", help="Do not remove source data"
+    )
+    parser.add_argument(
+        "-p",
+        "--project",
+        dest="project_dir",
+        default=".",
+        help="Directory of the project to operate on (default: current dir)",
+    )
     parser.set_defaults(command=remove_command)
 
     return parser
+
 
 def remove_command(args):
     project = load_project(args.project_dir)
@@ -213,8 +254,7 @@ def remove_command(args):
 
         project.env.git.remove_submodule(name, force=args.force)
 
-    source_dir = osp.join(project.config.project_dir,
-        project.local_source_dir(name))
+    source_dir = osp.join(project.config.project_dir, project.local_source_dir(name))
     project.remove_source(name)
     project.save()
 
@@ -225,18 +265,23 @@ def remove_command(args):
 
     return 0
 
+
 def build_info_parser(parser_ctor=argparse.ArgumentParser):
     parser = parser_ctor()
 
-    parser.add_argument('-n', '--name',
-        help="Source name")
-    parser.add_argument('-v', '--verbose', action='store_true',
-        help="Show details")
-    parser.add_argument('-p', '--project', dest='project_dir', default='.',
-        help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument("-n", "--name", help="Source name")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show details")
+    parser.add_argument(
+        "-p",
+        "--project",
+        dest="project_dir",
+        default=".",
+        help="Directory of the project to operate on (default: current dir)",
+    )
     parser.set_defaults(command=info_command)
 
     return parser
+
 
 def info_command(args):
     project = load_project(args.project_dir)
@@ -250,8 +295,10 @@ def info_command(args):
             if args.verbose:
                 print(dict(conf))
 
+
 def build_parser(parser_ctor=argparse.ArgumentParser):
-    parser = parser_ctor(description="""
+    parser = parser_ctor(
+        description="""
             Manipulate data sources inside of a project.|n
             |n
             A data source is a source of data for a project.
@@ -263,11 +310,12 @@ def build_parser(parser_ctor=argparse.ArgumentParser):
             in the current directory. An additional '-p' argument can be
             passed to specify project location.
         """,
-        formatter_class=MultilineFormatter)
+        formatter_class=MultilineFormatter,
+    )
 
     subparsers = parser.add_subparsers()
-    add_subparser(subparsers, 'add', build_add_parser)
-    add_subparser(subparsers, 'remove', build_remove_parser)
-    add_subparser(subparsers, 'info', build_info_parser)
+    add_subparser(subparsers, "add", build_add_parser)
+    add_subparser(subparsers, "remove", build_remove_parser)
+    add_subparser(subparsers, "info", build_info_parser)
 
     return parser
